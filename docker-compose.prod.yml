@@ -1,0 +1,56 @@
+version: '2.2'
+
+services:
+  abus_portal2018_db:
+    extends:
+      file: common.yml
+      service: abus_portal2018_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: mariapwd
+
+  abus_portal2018_php-fpm:
+    extends:
+      file: common.yml
+      service: abus_portal2018_php-fpm
+    depends_on:
+      - abus_portal2018_redis
+    restart: always
+    build:
+      args:
+        phpini: php_prod.ini
+    links:
+      - abus_portal2018_db
+
+  abus_portal2018_nginx:
+    extends:
+      file: common.yml
+      service: abus_portal2018_nginx
+    restart: always
+    depends_on:
+      - abus_portal2018_php-fpm
+    build:
+      args:
+        nginxconf: nginx_prod.conf
+    volumes:
+      - /etc/ssl/abus-bkp/chain.abus-kransysteme.de.crt:/etc/nginx/ssl/abus-kransysteme.de.crt
+      - /etc/ssl/abus-bkp/abus-kransysteme.de.key:/etc/nginx/ssl/abus-kransysteme.de.key
+    labels:
+      - "traefik.http.routers.portal2018-secure.rule=Host(`portal.abus-kransysteme.de`,`abukonfis.abus-kransysteme.de`,`ffd.abus-kransysteme.de`,`vital.abus-kransysteme.de`,`servicedoc.abus-kransysteme.de`,`tdata.abus-kransysteme.de`,`abukonfis2.abus-kransysteme.de`)"
+      - "traefik.http.routers.portal2018-secure.tls.certresolver=leresolver"
+    links:
+      - abus_portal2018_php-fpm
+
+  abus_portal2018_redis:
+    extends:
+      file: common.yml
+      service: abus_portal2018_redis
+    restart: always
+
+networks:
+  portal-net:
+    external: true
+  traefik-net:
+    external: true
+  database-net:
+    external: true

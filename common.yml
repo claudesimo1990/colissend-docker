@@ -1,0 +1,76 @@
+version: '2.2'
+
+services:
+  claude_colissend_db:
+    build: ./mariadb
+    container_name: claude_colissend_db
+    hostname: claude_colissend_db
+    volumes:
+      - /Users/claudesimo/PhpstormProjects/colissend/docker/mariadb/data:/var/lib/mysql
+      - /Users/claudesimo/PhpstormProjects/colissend/docker/mariadb/exchange:/data_exchange
+      - /Users/claudesimo/PhpstormProjects/colissend/docker/mariadb/logs/mysql:/var/logs/mysql
+      - /Users/claudesimo/PhpstormProjects/colissend/docker/mariadb/data/mariadb/conf:/etc/mysql/conf.d
+    networks:
+      - database-net
+      - proxy
+      - colissend-net
+
+  claude_colissend_php-fpm:
+    build: ./php-fpm
+    container_name: claude_colissend_php-fpm
+    hostname: claude_colissend_php-fpm
+    cpus: 3.4
+    volumes:
+      - /Users/claudesimo/PhpstormProjects/colissend/www:/var/www/html
+      - /Users/claudesimo/PhpstormProjects/colissend/data:/var/www/data
+      - /Users/claudesimo/PhpstormProjects/colissend/logs/php-fpm:/var/log/php
+      - /Users/claudesimo/PhpstormProjects/colissend/logs/cron:/var/log/cron
+    networks:
+      - colissend-net
+
+  claude_colissend_nginx:
+    build: ./nginx
+    container_name: claude_colissend_nginx
+    hostname: claude_colissend_nginx
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.claude_colis_nginx-secure.entrypoints=websecure
+      - traefik.http.routers.claude_colis_nginx-secure.middlewares=user-auth@file
+
+    volumes:
+      - /Users/claudesimo/PhpstormProjects/colissend/www:/var/www/html
+      - /Users/claudesimo/PhpstormProjects/colissend/data:/var/www/data
+      - /Users/claudesimo/PhpstormProjects/colissend/logs/nginx:/var/log/nginx
+      - /Users/claudesimo/PhpstormProjects/colissend/docker/nginx/config:/etc/nginx/config
+    networks:
+      - colissend-net
+      - proxy
+
+  claude_colissend_redis:
+    build: ./redis
+    container_name: claude_colissend_redis
+    hostname:  claude_colissend_redis
+    volumes:
+      - /Users/claudesimo/PhpstormProjects/colissend/redis:/data
+    networks:
+      - colissend-net
+      - database-net
+
+#  websockets:
+#    build:
+#      context: ./websockets
+#      args:
+#        - PUID=1000
+#        - PGID=1000
+#        - /var/www/web/colissend/data/www=/var/www/html
+#    container_name: websockets
+#    working_dir: /var/www/html
+#    hostname: websockets
+#    volumes:
+#      - /var/www/web/colissend/data/www:/var/www/html
+#    ports:
+#      - "6001:6001"
+#    networks:
+#      - colissend-net
+#      - proxy

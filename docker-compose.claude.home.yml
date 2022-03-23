@@ -1,0 +1,71 @@
+version: '2.2'
+
+services:
+  claude_colissend_db:
+    extends:
+      file: common.yml
+      service: claude_colissend_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: colissend
+      MYSQL_ROOT_PASSWORD: mariapwd
+
+  claude_colissend_php-fpm:
+    extends:
+      file: common.yml
+      service: claude_colissend_php-fpm
+    restart: always
+    build:
+      args:
+        development: 1
+        phpini: php_dev_claude.ini
+    environment:
+      XDEBUG_CONFIG: client_host=192.168.0.52
+      PHP_IDE_CONFIG: serverName=colis
+    links:
+      - claude_colissend_db
+      - claude_colissend_redis
+    networks:
+      - proxy
+      - colissend-net
+
+  claude_colissend_nginx:
+    extends:
+      file: common.yml
+      service: claude_colissend_nginx
+    restart: always
+    labels:
+      - traefik.http.routers.claude_colissend_nginx-secure.rule=Host(`colis.development.claude`)
+    depends_on:
+      - claude_colissend_php-fpm
+    build:
+      args:
+        development: 1
+        nginxconf: nginx_dev_claude.conf
+
+  claude_colissend_redis:
+    extends:
+      file: common.yml
+      service: claude_colissend_redis
+    expose:
+      - 6379
+    restart: always
+
+#  websockets:
+#    extends:
+#      file: common.yml
+#      service: websockets
+#    ports:
+#      - "6001:6001"
+#    restart: always
+#    networks:
+#      - proxy
+#      - colissend-net
+
+networks:
+  colissend-net:
+    external: true
+  proxy:
+    external: true
+  database-net:
+    external: true
