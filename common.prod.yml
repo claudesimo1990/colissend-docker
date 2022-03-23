@@ -1,0 +1,59 @@
+version: '2.2'
+
+services:
+
+  claude_colissend_db:
+    build: ./mariadb
+    container_name: claude_colissend_db
+    hostname: claude_colissend_db
+    volumes:
+      - /var/docker/colissend/mariadb/data:/var/lib/mysql
+      - /var/docker/colissend/mariadb/exchange:/data_exchange
+      - /var/docker/colissend/mariadb/logs/mysql:/var/logs/mysql
+      - /var/docker/colissend/mariadb/data/mariadb/conf:/etc/mysql/conf.d
+    networks:
+      - database-net
+      - proxy
+      - colissend-net
+
+  claude_colissend_php-fpm:
+    build: ./php-fpm
+    container_name: claude_colissend_php-fpm
+    hostname: claude_colissend_php-fpm
+    cpus: 3.4
+    volumes:
+      - /srv/colissend/data/www:/var/www/html
+      - /srv/colissend/data/data:/var/www/data
+      - /srv/colissend/logs/php-fpm:/var/log/php
+      - /srv/colissend/logs/cron:/var/log/cron
+    networks:
+      - colissend-net
+
+  claude_colissend_nginx:
+    build: ./nginx
+    container_name: claude_colissend_nginx
+    hostname: claude_colissend_nginx
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.claude_colis_nginx-secure.entrypoints=websecure
+      - traefik.http.routers.claude_colis_nginx-secure.middlewares=user-auth@file
+
+    volumes:
+      - /srv/colissend/data/www:/var/www/html
+      - /srv/colissend/data/data:/var/www/data
+      - /srv/colissend/logs/nginx:/var/log/nginx
+      - /srv/colissend/nginx/config:/etc/nginx/config
+    networks:
+      - colissend-net
+      - proxy
+
+  claude_colissend_redis:
+    build: ./redis
+    container_name: claude_colissend_redis
+    hostname:  claude_colissend_redis
+    volumes:
+      - /var/docker/colissend/redis/data:/data
+    networks:
+      - colissend-net
+      - database-net

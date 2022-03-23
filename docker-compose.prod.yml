@@ -1,56 +1,60 @@
 version: '2.2'
 
 services:
-  abus_portal2018_db:
+  claude_colissend_db:
     extends:
-      file: common.yml
-      service: abus_portal2018_db
+      file: common.prod.yml
+      service: claude_colissend_db
     restart: always
     environment:
+      MYSQL_DATABASE: colissend
       MYSQL_ROOT_PASSWORD: mariapwd
 
-  abus_portal2018_php-fpm:
+  claude_colissend_php-fpm:
     extends:
-      file: common.yml
-      service: abus_portal2018_php-fpm
-    depends_on:
-      - abus_portal2018_redis
+      file: common.prod.yml
+      service: claude_colissend_php-fpm
     restart: always
     build:
       args:
-        phpini: php_prod.ini
+        development: 1
+        phpini: php_dev_claude.ini
+    environment:
+      XDEBUG_CONFIG: client_host=192.168.0.52
+      PHP_IDE_CONFIG: serverName=colis
     links:
-      - abus_portal2018_db
+      - claude_colissend_db
+      - claude_colissend_redis
+    networks:
+      - proxy
+      - colissend-net
 
-  abus_portal2018_nginx:
+  claude_colissend_nginx:
     extends:
-      file: common.yml
-      service: abus_portal2018_nginx
+      file: common.prod.yml
+      service: claude_colissend_nginx
     restart: always
-    depends_on:
-      - abus_portal2018_php-fpm
-    build:
-      args:
-        nginxconf: nginx_prod.conf
-    volumes:
-      - /etc/ssl/abus-bkp/chain.abus-kransysteme.de.crt:/etc/nginx/ssl/abus-kransysteme.de.crt
-      - /etc/ssl/abus-bkp/abus-kransysteme.de.key:/etc/nginx/ssl/abus-kransysteme.de.key
     labels:
-      - "traefik.http.routers.portal2018-secure.rule=Host(`portal.abus-kransysteme.de`,`abukonfis.abus-kransysteme.de`,`ffd.abus-kransysteme.de`,`vital.abus-kransysteme.de`,`servicedoc.abus-kransysteme.de`,`tdata.abus-kransysteme.de`,`abukonfis2.abus-kransysteme.de`)"
-      - "traefik.http.routers.portal2018-secure.tls.certresolver=leresolver"
-    links:
-      - abus_portal2018_php-fpm
+      - traefik.http.routers.claude_colissend_nginx-secure.rule=Host(`colissend.${DOMAIN}`)
+    depends_on:
+      - claude_colissend_php-fpm
+    build:
+      args:
+        development: 1
+        nginxconf: nginx_dev_claude.conf
 
-  abus_portal2018_redis:
+  claude_colissend_redis:
     extends:
-      file: common.yml
-      service: abus_portal2018_redis
+      file: common.prod.yml
+      service: claude_colissend_redis
+    expose:
+      - 6379
     restart: always
 
 networks:
-  portal-net:
+  colissend-net:
     external: true
-  traefik-net:
+  proxy:
     external: true
   database-net:
     external: true
