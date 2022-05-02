@@ -17,7 +17,7 @@ services:
     restart: always
     build:
       args:
-        development: 1
+        development: 0
         phpini: php_prod.ini
     environment:
       XDEBUG_CONFIG: client_host=192.168.0.52
@@ -40,7 +40,7 @@ services:
       - claude_colissend_php-fpm
     build:
       args:
-        development: 1
+        development: 0
         nginxconf: nginx_dev_claude.conf
 
   claude_colissend_redis:
