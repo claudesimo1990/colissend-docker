@@ -19,6 +19,7 @@ services:
     build: ./php-fpm
     container_name: claude_colissend_php-fpm
     hostname: claude_colissend_php-fpm
+    cpus: 3.4
     volumes:
       - /Users/claudesimo/PhpstormProjects/colissend/www:/var/www/html
       - /Users/claudesimo/PhpstormProjects/colissend/data:/var/www/data
