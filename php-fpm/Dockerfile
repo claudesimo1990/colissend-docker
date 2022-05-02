@@ -65,6 +65,11 @@ RUN apt-get update \
 
 RUN docker-php-ext-install mysqli pdo pdo_mysql
 
+RUN apt-get update && \
+apt-get install -y libfreetype6-dev libjpeg62-turbo-dev libpng-dev && \
+docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ && \
+docker-php-ext-install gd
+
 # PHP konfigurieren
 COPY config/$phpini /usr/local/etc/php/conf.d/abus.ini
 
