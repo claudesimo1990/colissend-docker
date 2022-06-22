@@ -28,7 +28,7 @@ services:
       service: claude_colissend_nginx
     restart: always
     labels:
-      - traefik.http.routers.claude_colissend_nginx-secure.rule=Host(`colissend.${DOMAIN}`)
+      - traefik.http.routers.claude_colissend_nginx-secure.rule=Host(`${DOMAIN}`)
     depends_on:
       - claude_colissend_php-fpm
     build:
